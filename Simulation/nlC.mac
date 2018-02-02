@@ -1,0 +1,12 @@
+/* 
+ * File  : nlC.mac
+ * Author: Sandeep Koranne
+ */
+KA   : c^2/v^2 + einf - AXd;
+eqnA : gamma*E^2 + beta*E + KA;
+
+solA : solve(eqnA,E);
+print(solA);
+E1 : solA[1];
+lA : (E1*(gamma*E1 + beta/2))/(v^2*(einf + 2*beta*E1 + 3*gamma*E1^2) - c^2);
+print(tex(lA));

@@ -1,0 +1,62 @@
+/*
+ *   File   : kink.mac
+ *   Author : Sandeep Koranne (C) 2017 All rights reserved.
+ *   Purpose: ODE solution for Kink solution for travelling wave
+ */
+
+load("dynamics");
+load("plotdf");
+eps_inf : 2.25;
+eps_s   : 5.25;
+omega_0 : 4.11;
+omega_a : 0.15;
+omega_b : 0.45;
+chi_d   : 1.2;
+alpha_a : 0.66;
+alpha_b : 0.34;
+beta : 0.0; /* was 0.15 */
+gamma: 0.06;
+c: 1;
+v : 0.885;
+cv_frac: c^2/v^2;
+denom: 1 - v^2 - E - v^2*E^2;
+
+eqn1: W;
+eqn2:  (2*v^2*E*(W)^2 + v^2*(W)^2 - ( (1/v^2-2.23)*E - 0.58*E^2 - E^3/3))/(denom);
+
+
+
+plotdf([eqn1,eqn2],[E,W],
+	[trajectory_at,0,0.01],
+	[parameters,"v=0.5475"],
+	[sliders,"v=0.5:1"],
+	[tstep,0.01],[nsteps,1000],
+	[E,1,2],[W,-1,1]);
+
+
+
+
+
+rksol:rk([eqn1,eqn2],[E,W],[-0.6,0.001],[t,0,30,0.01])$
+
+plot2d(
+[discrete,makelist([p[1],p[2]^2+p[3]^2],p,rksol)],[xlabel,"t"],
+[ylabel,"E^2+W^2"],
+[psfile,"C2_L0.eps"]);
+
+
+
+plot2d(
+[discrete,makelist([p[2],p[3]],p,rksol)],[xlabel,"E"],
+[ylabel,"W"],
+[psfile,"C2_C0.eps"]);
+
+
+/*
+[title,"EW Phase plot for v=0.5, (E,W)=(1.5,0.001)"],
+*/
+
+/* 
+ plot2d([discrete,makelist([p[1],p[3]],p,rksol)],[xlabel,"xi"],[ylabel,"W"],[psfile,"MW45_V5.eps"]);
+*/
+

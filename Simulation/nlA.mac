@@ -1,0 +1,18 @@
+/* File  : nlA.mac
+   Author: Sandeep Koranne
+*/
+E: E0*exp(%i*(k*z-omega*t));
+E1: E,z=x+v*t;
+DE: diff(E1,x);
+print(DE);
+F: F0*exp(%i*(k*z-omega*t));
+G: G0*exp(%i*(k*z-omega*t));
+JF: diff(F,t);
+JG: diff(G,t);
+W1: (c*v)*(a*JF + b*JG)/(v^2*(einf+2*beta*E+3*gamma*E^2)-c^2);
+W:W1,z=x-v*t;
+/* We want to tell Maxima that diff(E,x)=W */
+
+WD:diff(W,x);
+
+print(diff(W,x));

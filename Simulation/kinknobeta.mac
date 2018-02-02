@@ -1,0 +1,57 @@
+/*
+ *   File   : kink.mac
+ *   Author : Sandeep Koranne (C) 2017 All rights reserved.
+ *   Purpose: ODE solution for Kink solution for travelling wave
+ */
+
+load("dynamics");
+load("plotdf");
+eps_inf : 2.25;
+eps_s   : 5.25;
+omega_0 : 4.11;
+omega_a : 0.15;
+omega_b : 0.45;
+chi_d   : 1.2;
+alpha_a : 0.66;
+alpha_b : 0.34;
+beta : 0.15;
+gamma: 0.06;
+c: 1;
+v : 0.6545;
+cv_frac: c^2/v^2;
+denom: c^2 - eps_inf*v^2 - 2*beta*v^2*E - 3*gamma*v^2*(E)^2;
+a_term: omega_a^2*(alpha_a*chi_d*E - E*cv_frac - eps_inf*E - beta*E^2*c^2 - gamma*E^2*c^2);
+b_term: omega_b^2*(alpha_b*chi_d*E - E*cv_frac - eps_inf*E - beta*E^2*c^2 - gamma*E^2*c^2);
+
+eqn1: W;
+eqn2:  (6*gamma*v^2*E*(W)^2 + 2*beta*v^2*(W)^2 + a_term + b_term)/(denom);
+
+qea: -gamma*v^2*E^2 - beta*v^2*E - v^2/c^2*eps_inf + v^2/c^2*alpha_a*chi_d - 1;
+qea_sol: solve(qea,E);
+print(float(qea_sol[1]));
+print(float(qea_sol[2]));
+
+qeb: -gamma*v^2*E^2 - beta*v^2*E - v^2/c^2*eps_inf + v^2/c^2*alpha_b*chi_d - 1;
+qeb_sol: solve(qeb,E);
+print(float(qeb_sol[1]));
+print(float(qeb_sol[2]));
+
+/* replace -7 by 7 
+plotdf([eqn1,eqn2],[E,W],[parameters,"v=0.5"],[sliders,"v=0.5:1,beta=0.15:0.5"],
+[trajectory_at,-7,1.01],
+	[tstep,0.01],[nsteps,1000],
+	[E,-30,-5],[W,-5,5],
+	[xradius,10],[yradius,10],[versus_t,1]);
+*/
+
+rksol:rk([eqn1,eqn2],[E,W],[5.0,0.01],[t,0,10,0.01]);
+/* print(rksol); */
+plot2d(
+[discrete,makelist([p[1],p[2]],p,rksol)],[xlabel,"$\\xi$"],
+[ylabel,"E"],[psfile,"ME19.ps"]);
+
+
+plot2d([discrete,makelist([p[1],p[3]],p,rksol)],[xlabel,"$\\xi$"],
+[ylabel,"W"],[psfile,"MW19.ps"]);
+
+

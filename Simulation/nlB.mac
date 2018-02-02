@@ -1,0 +1,15 @@
+/* File  : nlA.mac
+   Author: Sandeep Koranne
+*/
+E1: E0(z,t);
+E: E1,z=x+v*t;
+W: diff(E,x);
+F1: F0(z,t);
+F: F1,z=x+v*t;
+G1: G0(z,t);
+G: G1,z=x+v*t;
+JF: diff(F,t);
+JG: diff(G,t);
+W1: (c*v)*(a*JF + b*JG)/(v^2*(einf+2*beta*E+3*gamma*E^2)-c^2);
+
+print(W1);
