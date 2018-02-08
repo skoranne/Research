@@ -1,0 +1,464 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% File   : skoranne_homogenization.tex
+%% Author : Sandeep Koranne (C) 2018
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{article}[12pt]
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{a4wide}
+\usepackage{times}
+\usepackage{polynom}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{subfigure}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{calc}
+\lstset{
+  language={C++},
+  basicstyle=\small,
+  captionpos=b
+}
+
+\providecommand{\keywords}[1]{\textbf{\textit{Keywords---}} #1}
+
+%\usetikzlibrary{calc}
+%\usetikzlibrary{shapes}
+%\tikzset{egrid/.style={draw,help lines}}
+%\tikzset{mgrid/.style={draw,help lines,dashed}}
+%\tikzset{epoint/.style={draw,circle,red,inner sep=2pt,fill}}
+%\tikzset{mpoint/.style={draw,circle,blue,radius=3pt}}
+
+\definecolor{dark}{RGB}{0,105,0}
+
+
+%\newtheorem{lem}{Lemma}
+\def\EE{\mathcal E}
+\def\RR{\mathbb R}
+\def\FF{\mathbb F}
+\def\ZZ{\mathbb Z}
+\def\CC{\mathbb C}
+\def\Spec{\mathrm{Spec}}
+
+\theoremstyle{plain}
+\newtheorem*{main}{Main~Theorem}
+\newtheorem{thm}{Theorem}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{lem}[thm]{Lemma}
+      
+%\setlength{\parindent}{0mm}  
+
+\bibliographystyle{plain}
+
+
+\def\NN{\mathbb N}
+\def\QQ{\mathbb Q}
+
+\begin{document}
+\title{Homogenization Techniques for Calculating
+  Effective Permittivity of Nano-composites}
+\author{Sandeep Koranne}
+\maketitle
+\begin{abstract}
+Recent work in the development of spherical nano-structures embedded in dielectric
+has been shown to possess attractive optical properties which make them suitable for optical
+computation,  a process which is based on light-light interaction and confinement.
+Since experimental manufacture of such nano-materials is cost prohibitive and time consuming, a
+numerical method which can analyze the optical behavior of nano-crystals with high accuracy and
+efficiency is required.
+For full system design of telecommunication systems, which have high computational
+efficiency requirements, 
+first-order accurate macro-models of nano-structures
+are required. We present a homogenization technique which combines our previous work~\cite{koranne_optics}
+in micro-model solution generation to analyze a periodic structure of identically
+oriented Silicon nano-composites embedded in silicon-dioxide. We compare our approach
+to the standard mean-field method to compute the effective permittivity of the
+system. 
+\end{abstract}
+\keywords{
+  Effective permittivity of silicon nano-composites,
+  Nonlinear electromagnetic wave propagation, Maxwell's equations, FDTD method.}
+
+\section{Introduction}
+\label{sec:introduction}
+The advent of optical computation in 
+silicon photonics and nano-crystals has brought the problem of accurate
+and efficient analysis of wave propagation in anisotropic nonlinear media to the forefront.
+Recent work in the development of spherical nano-structures embedded in dielectric
+has been shown to possess attractive optical properties which make them suitable for optical
+computation,  a process which is based on light-light interaction and confinement.
+Since experimental manufacture of such nano-materials is cost prohibitive and time consuming, a
+numerical method which can analyze the optical behavior of nano-crystals with high accuracy and
+efficiency is required. As Rukhlenko, \emph{et.~al.}~\cite{rukhlenko2012effective} have described
+silicon nano-crystals (Si NC) have Kerr effect which is several orders of magnitude
+stronger than undoped fused silica (SiO2). Therefore silicon photonics waveguides are being
+integrated in photonics system. A schematic of identically oriented nano-composites is
+shown in Figure~\ref{fig:nano-cylinder}. As can be imagined it is impractical (due to
+computational requirements) to analyze the nonlinear effects of the waveguide by considering
+each nano-sphere individually. Therefore, a macro-model of the Si NC which is atleast first-order
+accurate, is needed. Previous approach to solving this problem include the effective-medium
+approach as developed by Rukhlenko, \emph{et.~al.}~\cite{rukhlenko2012effective}.
+In this paper we develop an alternative method based on homogenization of $\gamma$-periodic
+structures. The sequel of the paper is as follows:~we first describe briefly the underlying
+Maxwell equations with nonlinear susceptibility and polarization. Then we describe the FDTD
+method we have used to solve the micro-cell problem. This is based on our auxiliary differential
+equation (ADE) high-order non-linear FDTD method as described in our previous paper. A major
+component of that paper is the development of the \emph{numerical flux} and its corresponding
+conservation law as described in Section~\ref{section:micro-cell}. Having obtained the micro-cell
+solution we perform standard homogenization theory  following closely the approach developed
+by Abdulle and Weinan~E~\cite{abdulle2003finite}, with the matrix coefficient method
+as described by Bensoussan, \emph{et.~al}~\cite{bensoussan2011asymptotic}.
+
+The main contributions of our paper are the following:
+\begin{enumerate}
+\item{Micro-cell flux}:~we show an innovative use of the conservation of the numerical
+  flux of the micro-cell problem. This numerical flux could be computed using nonlinear FDTD
+  or other methods such as finite element methods,
+\item{Macro model development}:~as the analytical construction of the matrix coefficient $A^0$
+  in homogenization is complicated, we develop a numerical method for estimating the homogenization
+  matrix using the micro-cell solution,
+\item{Effective permittivity computation}:~we use the homogenization technique to compute
+  the effective third-order susceptibility and permittivity of a parameterized system comprising
+  of $(M\times N)$ identical spheres placed at a distance of $\gamma$
+\end{enumerate}
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}%[scale=0.8]
+     \draw[color=black,step=0.25,dotted] (0,0)--(7,0);
+     \draw[color=black,step=0.25,dotted] (0,1)--(7,1);
+     \draw[color=black,step=0.25,dotted] (0,2)--(7,2);
+     \draw[color=black,step=0.25,dotted] (0,3)--(7,3);
+     \draw[color=black,step=0.25,dotted] (0,4)--(7,4);
+     \draw[color=black,step=0.25,dotted] (0,5)--(7,5);
+     
+     \draw[color=black,step=0.25,dotted] (0,0)--(0,5);
+     \draw[color=black,step=0.25,dotted] (1,0)--(1,5);
+     \draw[color=black,step=0.25,dotted] (2,0)--(2,5);
+     \draw[color=black,step=0.25,dotted] (3,0)--(3,5);
+     \draw[color=black,step=0.25,dotted] (4,0)--(4,5);
+     \draw[color=black,step=0.25,dotted] (5,0)--(5,5);
+     \draw[color=black,step=0.25,dotted] (6,0)--(6,5);
+     \draw[color=black,step=0.25,dotted] (7,0)--(7,5);
+
+     %\draw[black] (2,2) circle(1);
+     \draw[<->] (2,2)--(3,2);
+     \draw (2.45,2) node[fill=white,below] {$\gamma$};
+     \filldraw[black] (1.45,1.95) rectangle(1.55,2.05);
+     \filldraw[black] (2.45,1.95) rectangle(2.55,2.05);
+     \filldraw[black] (1.95,2.45) rectangle(2.05,2.55);
+     \filldraw[black] (1.95,1.45) rectangle(2.05,1.55);     
+
+     %\filldraw[black] (2,2) circle(1pt);
+    \foreach \x/\y in { 1/,2/,3/,4/, 1/2,2/2,3/2,4/2, 1/3,2/3,3/3,4/3, 1/4,2/4,3/4,4/4 }
+       \draw (\x,\y ) circle (0.2cm);
+     
+     \draw (2,0) node[fill=white,below] {$x_{1,i}$};
+     \draw (0,2) node[fill=white,left] {$x_{2,j}$};            
+\end{tikzpicture}
+\caption{Example of nano-spheres embedded in dielectric.}
+\label{fig:nano-cylinder}
+\end{figure}
+
+\section{Nonlinear Maxwell's Equations}
+\label{section:nonlinear-maxwell}
+We begin, as is customary, by noting Maxwell's equations in vector differential form for anisotropic media
+in a given domain $\Omega$ for a time duration $[0,T]$:
+\begin{eqnarray}
+\frac{\partial \mathbf{D}}{\partial t} + \mathbf{J} & = & \nabla \times \mathbf{H} \label{eqn:mx1}\\
+\frac{\partial \mathbf{B}}{\partial t} & = & - \nabla \times \mathbf{E} \label{eqn:mx2}\\
+\nabla \cdot \mathbf{D} & = & \rho \label{eqn:mx3}\\
+\nabla \cdot \mathbf{B} & = & 0 \label{eqn:mx4} 
+\end{eqnarray}
+Here, $\mathbf{E}$ represents the electric field. We use the $j\omega t$ convention for
+representing time varying fields, therefore, the electric field is $\mathbf{E}=\mathbf{E_0}e^{j\omega t}$.
+Similarly, $\mathbf{H}$ represents the magnetic field. $\mathbf{D}$ represents the electric
+displacement, and for nonlinear medium, its interaction with $\mathbf{E}$ is critical and analyzed
+below in more detail. The magnetic displacement is denoted by $\mathbf{B}$. The current density
+is denoted $\mathbf{J}$. Ohm's law:
+\[
+\mathbf{J} = \sigma \mathbf{E}
+\]
+where $\sigma$ is the electric conductivity, relates the conduction current density to the electric
+field. The continuity of charge equation can be written as a differential equation:
+\[
+\frac{\partial \rho}{\partial t} + \nabla \cdot \mathbf{J} = 0
+\]
+Finally, the constitutive relation between magnetic flux and magnetic field can be written as:
+\[
+\mathbf{B} = \mu_0 \mathbf{H} + \mathbf{M}
+\]
+where $\mu_0$ is the free space permeability.
+In the present work, we assume non-magnetic materials, and assume that the domain has no charges and
+no conduction currents.
+For ease of reference we note the following vector calculus identities and relations:
+\begin{equation}
+\nabla \cdot \mathbf{V} = \Big( \hat{\mathbf{i}} \frac{\partial}{\partial x}
++ \hat{\mathbf{j}} \frac{\partial}{\partial y}
++ \hat{\mathbf{k}} \frac{\partial}{\partial z} \Big) \cdot
+\Big( V_x\hat{\mathbf{i}} + V_y\hat{\mathbf{j}} + V_z\hat{\mathbf{k}}\Big) =
+\frac{\partial V_x}{\partial x} + 
+\frac{\partial V_y}{\partial y} + 
+\frac{\partial V_z}{\partial z} 
+\end{equation}
+\begin{equation}
+\nabla \times \mathbf{V} = \begin{vmatrix}
+\hat{\mathbf{i}} & \hat{\mathbf{j}} & \hat{\mathbf{k}} \\
+\frac{\partial}{\partial x} & \frac{\partial}{\partial y} & \frac{\partial}{\partial z} \\
+V_x & V_y & V_z
+\end{vmatrix}
+= \hat{\mathbf{i}}\Big( \frac{\partial V_z}{\partial y} - \frac{\partial V_y}{\partial z}\Big)
++ \hat{\mathbf{j}}\Big( \frac{\partial V_x}{\partial z} - \frac{\partial V_z}{\partial x}\Big)
++ \hat{\mathbf{k}}\Big( \frac{\partial V_y}{\partial x} - \frac{\partial V_x}{\partial y}\Big)
+\end{equation}
+\begin{equation}
+\nabla \times ( \nabla \times \mathbf{V} ) = \nabla(\nabla \cdot \mathbf{V}) - 
+\nabla^2\mathbf{V} \label{eqn:curl_curl}
+\end{equation}
+
+As an example of the use of the above identities, we can derive wave equation
+corresponding to Maxwell's
+equations. Take the curl of Equation~\ref{eqn:mx2}:
+\begin{equation}
+\nabla \times \nabla \times \mathbf{E} = - \frac{\partial}{\partial t} \nabla \times \mathbf{B}
+= -\mu_0 \frac{\partial}{\partial t} \nabla \times H
+= -\mu_0 \frac{\partial}{\partial t} \frac{\partial \mathbf{D}}{\partial t}
+= -\mu_0 \epsilon_0 \frac{\partial^2 \mathbf{E}}{\partial t^2} \label{eqn:wave}
+\end{equation}
+where we use Equation~\ref{eqn:mx1}.
+ Using the curl identity given in
+Equation~\ref{eqn:curl_curl} as well as the divergence relation given in Equation~\ref{eqn:mx3}
+we have
+\begin{equation}
+\frac{1}{c^2} \frac{\partial^2 \mathbf{E}}{\partial t^2} - \nabla^2\mathbf{E} = 0 \label{eqn:wave1}
+\end{equation}
+where $c=\frac{1}{\sqrt{\mu_0\epsilon_0}}$ is the speed of light in free space.
+
+\subsection{Nonlinear Polarization}
+In a linear medium, the electric displacement $\mathbf{D}$ and the electric field $\mathbf{E}$
+are related as:
+\begin{equation}
+\mathbf{D} = \epsilon_0\mathbf{E} + \mathbf{P} \label{eqn:electric_displacement}
+\end{equation}
+where $\mathbf{P}$ is the electric polarization and $\epsilon_0$ is the free space permittivity.
+The theory of light propagation in dielectric solids is well explained in the book 
+by Butcher and Cotter~\cite{butcher1991elements}. The material below is abstracted from the above sources.
+
+\begin{equation}
+\mathbf{P}(\omega,t) = \frac{ \frac{e^2}{m} \mathbf{E_0}e^{j\omega t}}{(\omega_0^2-\omega^2)+j\omega\frac{\gamma}{m}}
+\label{eqn:polarization}
+\end{equation}
+The permittivity (witten as $\epsilon_0+\frac{\mathbf{P}}{\mathbf{E}}$) is therefore frequency dependent.
+It should be noted that the permittivity is a complex number. If the medium has resonance at multiple frequencies
+then the above equation for polarization has to be summed for each mode independently. We can expand
+Equation~\ref{eqn:polarization} using a Taylor series in powers of $\mathbf{E}$, to get:
+\begin{eqnarray}
+\mathbf{P} & = & \mathbf{\chi}^{(1)}(\mathbf{E}) + \mathbf{\chi}^{(2)}(\mathbf{E}\otimes\mathbf{E}) + \mathbf{\chi}^{(3)}(\mathbf{E}\otimes\mathbf{E}\otimes\mathbf{E}) + \ldots \nonumber \\
+           & = & \mathbf{P}^{(1)} + \mathbf{P}^{(2)} + \mathbf{P}^{(3)} + \ldots \label{eqn:nonlinear-polarization}
+\end{eqnarray}
+where $\mathbf{\chi}$ is a tensor coefficient, called the electric susceptibility. 
+The book by Butcher and Cotter~\cite{butcher1991elements}~pp.~16, clearly
+explains the use of tensor contraction in writing $\mathbf{P}^{(2)}$ as:
+\begin{eqnarray}
+\mathbf{P}^{(2)} & = & \epsilon_0 \int_{-\infty}^\infty d\tau_1 \int_{-\infty}^\infty d\tau_2 \mathbf{R}^{(2)} (t-\tau_1, t-\tau_2): \mathbf{E}(\tau_1) \mathbf{E}(\tau_2) \\
+& = & \epsilon_0 \int_{-\infty}^\infty d\tau'_1 \int_{-\infty}^\infty d\tau'_2 \mathbf{R}^{(2)} (\tau'_1, \tau'_2): \mathbf{E}(t-\tau_1) \mathbf{E}(t-\tau_2) 
+\end{eqnarray}
+In the above equations, $\mathbf{R}^{(2)}$ is the quadratic polarization
+response tensor of the medium, and the equations capture the time-invariance,
+causality and \emph{intrinsic permutation symmetry} of the
+polarization. Generalizations to $n=3$ are immediate, and it should be
+noted that $\mathbf{R}$ then becomes a $(n+1)$ rank tensor.
+Therefore we can now
+write the electric displacement constitutive equation, Equation~\ref{eqn:electric_displacement} as:
+\begin{equation}
+\mathbf{D} = \mathbf{P}^{(1)}\mathbf{E} + \mathbf{P}^{(2)}\mathbf{E} + \mathbf{P}^{(3)}\mathbf{E} 
+\label{eqn:electric_displacement_2}
+\end{equation}
+Next, we consider the dispersiveness of the medium; the linear polarization $\mathbf{P}^{(1)}$ can
+be written as the sum of an instantenous response (corresponding to $\omega=\infty$) and a
+dispersive response:
+\begin{equation}
+\mathbf{P}^{(1)} = \mathbf{P}^{(1)}_{\infty}(\mathbf{E}) + \mathbf{P}^{(1)}_{\mathrm{disp}}(\mathbf{E}) \label{eqn:electric_displacement_3}
+\end{equation}
+
+For notational simplicity we can split the above polarization into a linear as well
+as a non-linear component
+\begin{eqnarray}
+  \mathbf{P} & = & \epsilon_\infty \mathbf{E} + \mathbf{\Phi} \\
+  \mathbf{P^\mathrm{NL}} & = & a(1-\theta)||\mathbf{E}||^2\mathbf{E} + \mathbf{\Phi}^\mathrm{NL}
+\end{eqnarray}
+where $\mathbf{\Phi},\mathbf{\Phi}^\mathrm{NL}$ are the residual linear and non-linear
+polarizations, and $a$ and $\theta$ are parameters which control the relative
+strength and contribution of the instantaneous Kerr and the Raman response.
+For comparison with the work of Rukhlenko, we only use the Kerr response in this
+paper, but the proposed method is not restricted to it.
+
+Using these the wave equation can be written as:
+\begin{equation}
+  \frac{1}{c^2} \frac{\partial^2 \mathbf{E}}{\partial t^2} - \nabla^2\mathbf{E} =
+  \mu_0 \frac{\partial^2 \mathbf{P}}{\partial t^2} + \mu_0 \frac{\partial^2 \mathbf{P}^\mathrm{NL}}{\partial t^2}
+  \label{eqn:wave2}
+\end{equation}
+Comparing Equation~\ref{eqn:wave1} and Equation~\ref{eqn:wave2}, we observe that
+Equation~\ref{eqn:wave2} is a wave equation with a source term, and this is the underlying
+reason for the nonlinear effects in electromagnetic wave propagation. The induced polarization
+sets up a resonant electric field, which in turn acts as the source of a new wave. If certain
+conditions (called the phase matching conditions) are satisfied, this process acts coherently
+and a new harmonic (with a higher frequency than the original wave) is generated.
+
+
+\section{Micro cell solution}
+\label{section:micro-cell}
+In our previous research paper~\cite{koranne_optics} we have described a high-order FDTD method for
+wave propagation in nonlinear media.
+\begin{equation}
+E_{j-2} - 2E_{j-1} + E_{j}  = \frac{2h^2}{c^2}\Big[-v^2\epsilon_\infty E_j + - 4\beta v^2 E_j^2 - 9\gamma v^2 E_j^3\Big]
+\end{equation}
+We can write the above system of non-linear ODE in matrix form as $AE(t)=g(t)$, where $g(t)$ is a forcing function to account
+for inflow and outflow boundary conditions at $z=0$ and $z=L=Mh$, where $\Omega=[0,L]$ is the computation domain. The matrix
+system can be written as shown below using the notation
+\begin{equation}
+r(h,v) = 1-\frac{2h^2}{c^2}(-v^2\epsilon_\infty ) \label{eqn:rhv}
+\end{equation}
+
+\[
+\begin{bmatrix}
+r(h,v) & 0 & 0 & \ldots & \ldots & \vdots \\
+-2 & r(h,v) & 0 & 0 & \ldots & \vdots \\
+1 & -2 & r(h,v) & 0 & \ldots & \vdots \\
+0 & 1 & -2 & r(h,v) & 0 & \vdots \\
+\vdots & \vdots & \vdots & \vdots & \vdots & \vdots \\
+0 & 0 & 0 & 1 & -2 & r(h,v) 
+\end{bmatrix}
+\begin{bmatrix}
+\vdots \\
+E_{j-2} \\
+E_{j-1} \\
+E_j \\
+E_{j+1} \\
+E_{j+2} \\
+\vdots
+\end{bmatrix} = 
+\begin{bmatrix}
+g_0(t)-\frac{2h^2 v^2}{c^2}( 4\beta E_0^2 + 9\gamma E_0^3) \\
+\vdots\\
+\vdots\\
+\frac{-2h^2 v^2}{c^2}( 4\beta E_j^2 + 9\gamma E_j^3) \\
+\vdots\\
+\vdots\\
+g_M(t)-\frac{2h^2 v^2}{c^2}( 4\beta E_M^2 + 9\gamma E_M^3)
+\end{bmatrix}
+\]
+
+Using a centered difference formula for the time derivative we arrive at a method which is similar to Beam-Warming method.
+\begin{equation}
+\frac{E_j^{n+1}-2E_j^n+E_j^{n-1}}{\Delta t^2} = c^2\Big[ \frac{E_{j-2}^n - 2E_{j-1}^n + E_j^n}{2h^2}\Big]
+\end{equation}
+The conservation law for each $E_j(t)$ is a non-linear equation as shown below in Equation~\ref{eqn:rhv-conservation}.
+\begin{equation}
+E_{j-2}(t) - 2E_{j-1}(t) + E_j(t)\Big[1-\frac{2h^2}{c^2}(-v^2\epsilon_\infty ) 
++ \frac{2h^2 v^2}{c^2}( 4\beta E_j(t) + 9\gamma E_j^2(t))\Big] = 0 \label{eqn:rhv-conservation}
+\end{equation}
+The above can be converted to an explicit scheme, but Equation~\ref{eqn:rhv-conservation} has to be solved at each time step.
+Therefore we get
+\begin{eqnarray}
+E_j^{n+1} & = & \frac{\Delta t^2 c^2}{2h^2}\Big[ E_{j-2}^n - 2E_{j-1}^n + E_j^n\Big] + 2E_j^n - E_j^{n-1} \nonumber \\
+0 & = & E_{j-2}-2E_{j-1}+E_j^n\Big[ r(h,v) + \frac{2h^2 v^2}{c^2}( 4\beta E_j(t) + 9\gamma E_j^2(t))\Big]
+\end{eqnarray}
+
+From the above equation the numerical flux in the polarization can be calculated as below
+\begin{eqnarray}
+  D_j^{n+1} - \Phi_j^{n+1} & = & E_j^{n+1}[\epsilon_\infty + a(1-\theta)(E_j^{n+1})^2] \\
+  \frac{H_j^{n+1/2}-H_j^{n-1/2}}{\Delta t} & = & - \frac{ (-E_{j+1}^n + \frac{1}{2} E_j^n) +
+    (\frac{1}{6}E_{j+2}^n + \frac{1}{3}E_{j-1}^n) }{\Delta x} \\
+  \frac{D_j^{n+1}-D_j^n}{\Delta t} & = & \frac{ (-H_{j-1}^{n+1/2}+\frac{1}{2}H_j^{n+1/2}) +
+    (\frac{1}{6}H_{j-2}^{n+1/2} + \frac{1}{3}H_{j+1}^{n+1/2})  }{\Delta x} \label{eqn:numerical-flux}
+  \end{eqnarray}
+
+\section{Homogenization Technique}
+\label{section:homogenization}
+We refer to Abdulle~\cite{abdulle2003finite} and Bensoussan~\cite{bensoussan2011asymptotic} for
+background material for this section, even though these references focus on the parabolic and
+elliptic operators. Refer to Figure~\ref{fig:nano-cylinder}, where we have the periodic placement
+of spheres with a distance periodicity of $\gamma$. Rather than treat each sphere individually
+we can consider the multi-scale problem. The local electric field $\mathbf{E(r)}=(E_x,E_y,E_z)$ is
+known everywhere inside the domain $\Omega$. Then the linear effective permittivity can be calculated
+as:
+\begin{equation}
+  \epsilon_\mathrm{eff} = \frac{1}{V} \int_\Omega \epsilon(\mathbf{r})\Big(
+  \frac{\mathbf{E(r)}}{\mathcal{E}}\Big)^2 dV
+\end{equation}
+where
+\[
+\mathcal{E}^2 = \mathcal{E}_x^2 + \mathcal{E}_y^2 + \mathcal{E}_z^2
+\]
+are the space-averaged electric field and components.
+The space dependent permittivity is calculated based on the characteristic function $\chi_j(\mathbf{r})$,
+where $\chi_j(\mathbf{r})=1$ when $\mathbf{r}$ is inside the $j$-th medium. Then
+\[
+\epsilon(\mathbf{r}) = \epsilon_1 \chi_1(\mathbf{r}) + \epsilon_2 \chi_2(\mathbf{r})
+\]
+where $\epsilon_1,\epsilon_2$ are the permittivities of silicon and silica, respectively.
+For a volume fraction $f$ (of $V$), mean-field theory approximates the effective permittivity
+as~\cite{rukhlenko2012effective}:
+\begin{equation}
+  \epsilon_\mathrm{eff}(\epsilon_1,\epsilon_2,f) = \frac{1}{4}
+  \Big[ u + (u^2+8\epsilon_1\epsilon_2)^\frac{1}{2}\Big] \label{eqn:mft}
+\end{equation}
+where $u=(3f-1)\epsilon_1 + (2-3f)\epsilon_2$.
+
+\subsection{Multiscale Formulation}
+Let us denote the electromagnetic vector potential by $\mathcal{A}_\gamma(t,x)$, where
+$\gamma$ is the period of the homogenization, i.e., $\mathcal{A}_\gamma(x) = \mathcal{A}(x/\gamma)$.
+The electric field $E$ and magnetic
+field are recovered by
+\begin{eqnarray}
+  E(t,x) = - \frac{\partial \mathcal{A}_\gamma}{\partial t}(t,x) \\
+  B(t,x) = \mathrm{curl}\ \mathcal{A}_\gamma(t,x)
+\end{eqnarray}
+Using the wave equation, the homogenization theory implies that there is a weak solution
+\[
+E_\gamma \to E^0
+\]
+where $E^0$ is the solution to the homogenized problem
+\[
+\frac{1}{c^2} \frac{\partial^2 \mathbf{E^0}}{\partial t^2} - \nabla^2\mathbf{E^0} = 0
+\]
+and the electrostatic potential $\mathcal{A}_0$ is given by
+\[
+\mathcal{A}_{ij}^0 = \int_\Omega \Big(\mathcal{A}_{ij}(\mathbf{r}) + 
+\mathcal{A}_{1,i}(\mathbf{r}) \frac{\partial \phi^j}{\partial x} +
+\mathcal{A}_{2,j}(\mathbf{r}) \frac{\partial \phi^j}{\partial y}\Big) dV
+\]
+where $\Omega=(0,1)^2$, and we suppose $\mathcal{A}(\mathbf{r})$ is $\gamma$-periodic.
+The $\phi^j(\mathbf{r})$ are the \emph{micro-cell} solutions we described in the
+previous section.
+
+\section{Proposed Algorithm}
+\label{section:proposed_algorithm}
+\begin{algorithm}
+
+\end{algorithm}
+
+\section{Implementation Details}
+%% \begin{figure}
+%% \begin{center}
+%% %\includegraphics[width=10cm]{a.png}
+%% \caption{Example of 1D FDTD Gaussian pulse propagation along the $z$-axis in non-dispersive media.}
+%% \label{fig:1D-FDTD}
+%% \end{center}
+%% \end{figure}
+\section{Experimental Results}
+
+\section{Conclusion}
+
+
+\bibliography{hom.bib}
+
+\end{document}
